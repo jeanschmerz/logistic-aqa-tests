@@ -1,0 +1,23 @@
+# Папки редактора
+.vscode/
+.idea/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS / временные файлы
+Thumbs.db
+.DS_Store
+
+# Логи
+*.log
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
