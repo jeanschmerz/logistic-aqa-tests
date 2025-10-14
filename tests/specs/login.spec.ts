@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { credentials } from '../fixtures/testData';
+import { credentials } from '../config/credentials';
 import { LoginPage } from '../pages/LoginPage';
 
 let loginPage: LoginPage;
@@ -10,13 +10,23 @@ test.describe('Проверка логина', () => {
     await loginPage.open();
   });
   test('Проверка успешного логина (валидные креды)', async ({ page }) => {
-    await loginPage.login(credentials.username, credentials.password);
-    await expect(page).toHaveURL(/inventory\.html/);
-    await expect.soft(loginPage.page.locator('.inventory_list')).toBeVisible();
+    await test.step('Ввод валидной пары логин/пароль', async () => {
+      await loginPage.login(credentials.validUser.username, credentials.validUser.password);
+    });
+    await test.step('Переход на страницу каталога товаров', async () => {
+      await expect(page).toHaveURL(/inventory\.html/);
+    });
+    await test.step('Проверка видимости заголовка', async () => {
+      await expect.soft(loginPage.inventoryHeader).toBeVisible();
+    });
   });
 
   test('Проверка неуспешного логина (невалидные креды)', async () => {
-    await loginPage.login('invalid_user', 'invalid_password');
-    await expect(loginPage.errorMessage).toBeVisible();
+    await test.step('Ввод невалидной пары логин/пароль', async () => {
+      await loginPage.login(credentials.invalidUser.username, credentials.invalidUser.password);
+    });
+    await test.step('Проверка отображения сообщения об ошибке', async () => {
+      await expect(loginPage.errorMessage).toBeVisible();
+    });
   });
 });
