@@ -1,34 +1,56 @@
 import { test, expect } from '@playwright/test';
-import { credentials, checkoutInfo } from '../fixtures/testData';
+import { checkoutInfo } from '../fixtures/fixtures';
 import { LoginPage } from '../pages/LoginPage';
+import { credentials } from '../config/credentials';
+import { CartPage } from '../pages/CartPage';
+import { CheckoutPage } from '../pages/CheckoutPage';
+import { ProductsPage } from '../pages/ProductsPage';
 
-let loginPage: LoginPage;
+const testProducts = ['sauce-labs-backpack', 'sauce-labs-bike-light'];
 
-test.describe('Проверка логина', () => {
+test.describe('Полный цикл оформления заказа', () => {
+  let loginPage: LoginPage;
+  let productsPage: ProductsPage;
+  let cartPage: CartPage;
+  let checkoutPage: CheckoutPage;
   test.beforeEach(async ({ page }) => {
     loginPage = new LoginPage(page);
+    productsPage = new ProductsPage(page);
+    cartPage = new CartPage(page);
+    checkoutPage = new CheckoutPage(page);
+
     await loginPage.open();
-  });
-  test('Заказ товара (полный цикл)', async ({ page }) => {
-    await loginPage.login(credentials.username, credentials.password);
+    await loginPage.login(credentials.validUser.username, credentials.validUser.password);
     await expect(page).toHaveURL(/inventory\.html/);
+  });
 
-    await page.click('[data-test="add-to-cart-sauce-labs-backpack"]');
-    await page.click('[data-test="add-to-cart-sauce-labs-bike-light"]');
+  test('Успешное оформление заказа с двумя товарами', async ({ page }) => {
+    await test.step('Добавление товаров в корзину', async () => {
+      for (const product of testProducts) {
+        await productsPage.addProductToCart(product);
+      }
+    });
 
-    await page.click('.shopping_cart_link');
-    await expect(page.locator('.cart_item')).toHaveCount(2);
+    await test.step('Проверка товаров в корзине', async () => {
+      await productsPage.goToCart();
+      await cartPage.verifyCartItemsCount(testProducts.length);
+    });
+    await test.step('Начало оформления заказа', async () => {
+      await cartPage.proceedToCheckout();
+    });
 
-    await page.click('[data-test="checkout"]');
-    await page.fill('[data-test="firstName"]', checkoutInfo.firstName);
-    await page.fill('[data-test="lastName"]', checkoutInfo.lastName);
-    await page.fill('[data-test="postalCode"]', checkoutInfo.postalCode);
-    await page.click('[data-test="continue"]');
-
-    await expect(page.locator('.summary_info')).toBeVisible();
-
-    await page.click('[data-test="finish"]');
-
-    await expect(page.locator('.complete-header')).toHaveText('Thank you for your order!');
+    await test.step('Заполнение информации о доставке', async () => {
+      await checkoutPage.fillShippingInfo(checkoutInfo);
+      await checkoutPage.continueToOverview();
+    });
+    await test.step('Финальная проверка страницы заказа', async () => {
+      await checkoutPage.verifyOrderSummaryVisible();
+    });
+    await test.step('Завершение заказа', async () => {
+      await checkoutPage.finishOrder();
+    });
+    await test.step('Проверка подтверждения оформления заказа', async () => {
+      await checkoutPage.verifyOrderCompletion('Thank you for your order!');
+    });
   });
 });

@@ -6,15 +6,19 @@ let mainPage: StartPage;
 test.describe('Тесты UI главной страницы', () => {
   test.beforeEach(async ({ page }) => {
     mainPage = new StartPage(page);
-    await mainPage.openStartPage();
+    await mainPage.open();
   });
-  test(`Проверка отображения элементов UI`, async ({ page }) => {
-    await mainPage.checkElementsVisibility();
+
+  test('Проверка отображения основных элементов UI', async () => {
+    await mainPage.verifyPageLoaded();
   });
-  test('Проверка названий элементов элементов UI', async ({ page }) => {
-    await mainPage.checkElementsText();
+
+  test('Проверка отображения информации о логине', async () => {
+    await mainPage.verifyLoginCredentialsDisplayed();
   });
-  test('Проверка содержимого href элементов UI', async ({ page }) => {
-    await mainPage.checkElementsHrefAttribute();
+
+  test('Проверка placeholder атрибутов', async () => {
+    await mainPage.verifyUsernamePlaceholder();
+    await mainPage.verifyPasswordPlaceholder();
   });
 });
